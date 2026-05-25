@@ -52,15 +52,32 @@ if command -v ajv >/dev/null 2>&1; then
     -s "$SCHEMA" \
     -d "$CIR" \
     --allow-union-types
-elif command -v python3 >/dev/null 2>&1 && python3 -c "import jsonschema" 2>/dev/null; then
-  python3 -c "
-import json, sys
+elif command -v python3 >/dev/null 2>&1 && python3 -c "import jsonschema, referencing" 2>/dev/null; then
+  # Pre-load every *.schema.json in the schema dir into a Registry so
+  # cross-schema $refs (cir → paper → claim → author → ...) resolve
+  # against the local filesystem instead of trying to fetch
+  # https://rrxiv.com/schema/v0/<name>.schema.json over the network.
+  SCHEMA_DIR="$(dirname "$SCHEMA")"
+  python3 - "$SCHEMA" "$CIR" "$SCHEMA_DIR" <<'PY'
+import glob, json, os, sys
 import jsonschema
-schema = json.load(open('$SCHEMA'))
-doc = json.load(open('$CIR'))
-jsonschema.Draft202012Validator(schema).validate(doc)
-print('OK  $CIR validates against cir.schema.json')
-"
+from referencing import Registry, Resource
+from referencing.jsonschema import DRAFT202012
+
+schema_path, cir_path, schema_dir = sys.argv[1:4]
+schema = json.load(open(schema_path))
+doc = json.load(open(cir_path))
+
+resources = []
+for path in sorted(glob.glob(os.path.join(schema_dir, "*.schema.json"))):
+    s = json.load(open(path))
+    if "$id" in s:
+        resources.append((s["$id"], Resource(contents=s, specification=DRAFT202012)))
+registry = Registry().with_resources(resources)
+
+jsonschema.Draft202012Validator(schema, registry=registry).validate(doc)
+print(f"OK  {cir_path} validates against {os.path.basename(schema_path)}")
+PY
 elif command -v uv >/dev/null 2>&1; then
   PYREPO="${RRXIV_PYTHON_REPO:-$ROOT/../rrxiv-python}"
   if [[ ! -f "$PYREPO/pyproject.toml" && -f "$ROOT/deps/rrxiv-python/pyproject.toml" ]]; then
@@ -69,7 +86,7 @@ elif command -v uv >/dev/null 2>&1; then
   # --all-extras pulls in the CLI's transitive deps (cryptography +
   # http-message-signatures + fastapi via cli/app.py's eager imports).
   # `rrxiv validate` itself doesn't need any of them at runtime.
-  uv run --project "$PYREPO" --all-extras rrxiv validate --cir "$CIR"
+  uv run --project "$PYREPO" --all-extras rrxiv validate "$CIR"
 else
   echo "ERROR: no validator available." >&2
   echo "Install one of:" >&2
