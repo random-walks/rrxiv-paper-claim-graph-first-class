@@ -20,7 +20,7 @@
 % License: MIT.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{rrxiv}[2026/05/25 v0.4 rrxiv paper class]
+\ProvidesClass{rrxiv}[2026/05/25 v0.5 rrxiv paper class]
 
 % Pass options to article
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -37,6 +37,11 @@
 % environments that must appear inline (e.g. mid-proof TikZ diagrams).
 \RequirePackage{float}
 \RequirePackage{xcolor}
+% TikZ + the `calc` library covers geometric figures (coordinate
+% arithmetic like $(A)!0.5!(B)$ for midpoints). Loading at the class
+% level so paper authors don't have to repeat the boilerplate.
+\RequirePackage{tikz}
+\usetikzlibrary{calc}
 \RequirePackage{enumitem}
 \RequirePackage[numbers]{natbib}
 \RequirePackage{booktabs}
