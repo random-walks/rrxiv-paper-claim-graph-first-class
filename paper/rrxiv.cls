@@ -20,7 +20,7 @@
 % License: MIT.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{rrxiv}[2026/05/25 v0.3 rrxiv paper class]
+\ProvidesClass{rrxiv}[2026/05/25 v0.4 rrxiv paper class]
 
 % Pass options to article
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -33,6 +33,9 @@
 \RequirePackage[T1]{fontenc}
 \RequirePackage{amsmath, amsthm, amssymb, mathtools}
 \RequirePackage{graphicx}
+% `float` provides the [H] placement specifier used by figure/table
+% environments that must appear inline (e.g. mid-proof TikZ diagrams).
+\RequirePackage{float}
 \RequirePackage{xcolor}
 \RequirePackage{enumitem}
 \RequirePackage[numbers]{natbib}
