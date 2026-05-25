@@ -66,7 +66,9 @@ elif command -v uv >/dev/null 2>&1; then
   if [[ ! -f "$PYREPO/pyproject.toml" && -f "$ROOT/deps/rrxiv-python/pyproject.toml" ]]; then
     PYREPO="$ROOT/deps/rrxiv-python"
   fi
-  uv run --project "$PYREPO" rrxiv validate --cir "$CIR"
+  # --extra agent ensures the CLI's transitive client/signing deps
+  # resolve even though `rrxiv validate` itself doesn't sign anything.
+  uv run --project "$PYREPO" --extra agent rrxiv validate --cir "$CIR"
 else
   echo "ERROR: no validator available." >&2
   echo "Install one of:" >&2

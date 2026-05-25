@@ -27,9 +27,14 @@ fi
 #   2. `rrxiv` on PATH (once published to PyPI, or a global uv install).
 #   3. Sibling checkout — the local-dev convention where paper repos sit
 #      next to rrxiv-python under one workspace dir.
+# The CLI imports rrxiv.client at startup, which pulls in the optional
+# `agent` extra (cryptography + http-message-signatures). We include
+# --extra agent on every uv-based invocation so even `rrxiv parse` —
+# which doesn't actually sign anything — can resolve its transitive
+# imports.
 RRXIV_CMD=""
 if [[ -n "${RRXIV_PYTHON_REPO:-}" && -f "$RRXIV_PYTHON_REPO/pyproject.toml" ]]; then
-  RRXIV_CMD="uv run --project $RRXIV_PYTHON_REPO rrxiv"
+  RRXIV_CMD="uv run --project $RRXIV_PYTHON_REPO --extra agent rrxiv"
 elif command -v rrxiv >/dev/null 2>&1; then
   RRXIV_CMD="rrxiv"
 elif command -v uv >/dev/null 2>&1; then
@@ -39,7 +44,7 @@ elif command -v uv >/dev/null 2>&1; then
     "$ROOT/../../repos/rrxiv-python" \
     "$ROOT/deps/rrxiv-python"; do
     if [[ -f "$sibling/pyproject.toml" ]]; then
-      RRXIV_CMD="uv run --project $sibling rrxiv"
+      RRXIV_CMD="uv run --project $sibling --extra agent rrxiv"
       break
     fi
   done
