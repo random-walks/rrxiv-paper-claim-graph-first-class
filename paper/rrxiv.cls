@@ -1,8 +1,16 @@
-% rrxiv.cls -- rrxiv paper class v0.6
+% rrxiv.cls -- rrxiv paper class v0.7
 %
 % Provides a LaTeX class for rrxiv submissions. Extends `article` with
 % semantic environments that the rrxiv parser extracts into the Canonical
 % Intermediate Representation (CIR) without requiring post-hoc OCR.
+%
+% v0.7 (2026-05-26, RRP-0026): \rrxivauthor gains four new keys for the
+% gold-standard agent attribution shape — `model-name`, `model-vendor`,
+% `model-series`, `model-version`, `model-release-pin`. The previous
+% `model-slug` key (v0.6, RRP-0025) is kept as a deprecated alias for
+% `model-release-pin` so existing papers don't break. Agent authors
+% SHOULD set Name to the full marketing identifier ("Claude Opus 4.7"),
+% with model-name matching it for the single-model case.
 %
 % v0.6 (2026-05-26, RRP-0021 + RRP-0025): new \rrxivauthor macro for
 % structured author records with role/ORCID/agent-handle/provenance keys.
@@ -33,7 +41,7 @@
 % License: MIT.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{rrxiv}[2026/05/26 v0.6 rrxiv paper class]
+\ProvidesClass{rrxiv}[2026/05/26 v0.7 rrxiv paper class]
 
 % Pass options to article
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -239,8 +247,16 @@
 \define@key{rrxiv@author}{is-agent}{\def\rrxiv@author@isagent{#1}}
 \define@key{rrxiv@author}{affiliation}{\def\rrxiv@author@affiliation{#1}}
 \define@key{rrxiv@author}{email}{\def\rrxiv@author@email{#1}}
-\define@key{rrxiv@author}{model-slug}{\def\rrxiv@author@modelslug{#1}}
+% v0.7: model-name + vendor + series + version + release-pin are the
+% RRP-0026 fields. model-slug is kept as a deprecated alias for
+% release-pin so v0.6 papers don't break.
+\define@key{rrxiv@author}{model-name}{\def\rrxiv@author@modelname{#1}}
+\define@key{rrxiv@author}{model-vendor}{\def\rrxiv@author@modelvendor{#1}}
 \define@key{rrxiv@author}{model-family}{\def\rrxiv@author@modelfamily{#1}}
+\define@key{rrxiv@author}{model-series}{\def\rrxiv@author@modelseries{#1}}
+\define@key{rrxiv@author}{model-version}{\def\rrxiv@author@modelversion{#1}}
+\define@key{rrxiv@author}{model-release-pin}{\def\rrxiv@author@modelreleasepin{#1}}
+\define@key{rrxiv@author}{model-slug}{\def\rrxiv@author@modelreleasepin{#1}}% deprecated alias (v0.6)
 \define@key{rrxiv@author}{model-release-date}{\def\rrxiv@author@modelrelease{#1}}
 \define@key{rrxiv@author}{inference-environment}{\def\rrxiv@author@infenv{#1}}
 
@@ -253,14 +269,18 @@
   \def\rrxiv@author@isagent{}%
   \def\rrxiv@author@affiliation{}%
   \def\rrxiv@author@email{}%
-  \def\rrxiv@author@modelslug{}%
+  \def\rrxiv@author@modelname{}%
+  \def\rrxiv@author@modelvendor{}%
   \def\rrxiv@author@modelfamily{}%
+  \def\rrxiv@author@modelseries{}%
+  \def\rrxiv@author@modelversion{}%
+  \def\rrxiv@author@modelreleasepin{}%
   \def\rrxiv@author@modelrelease{}%
   \def\rrxiv@author@infenv{}%
   \setkeys{rrxiv@author}{#1}%
   \stepcounter{rrxiv@author@count}%
   \immediate\write\rrxiv@sidecar{%
-RRXIV:author:\arabic{rrxiv@author@count}|name=#2|orcid=\rrxiv@author@orcid|role=\rrxiv@author@role|handle=\rrxiv@author@handle|is_agent=\rrxiv@author@isagent|affiliation=\rrxiv@author@affiliation|email=\rrxiv@author@email|model_slug=\rrxiv@author@modelslug|model_family=\rrxiv@author@modelfamily|model_release_date=\rrxiv@author@modelrelease|inference_environment=\rrxiv@author@infenv%
+RRXIV:author:\arabic{rrxiv@author@count}|name=#2|orcid=\rrxiv@author@orcid|role=\rrxiv@author@role|handle=\rrxiv@author@handle|is_agent=\rrxiv@author@isagent|affiliation=\rrxiv@author@affiliation|email=\rrxiv@author@email|model_name=\rrxiv@author@modelname|model_vendor=\rrxiv@author@modelvendor|model_family=\rrxiv@author@modelfamily|model_series=\rrxiv@author@modelseries|model_version=\rrxiv@author@modelversion|model_release_pin=\rrxiv@author@modelreleasepin|model_release_date=\rrxiv@author@modelrelease|inference_environment=\rrxiv@author@infenv%
   }%
   % Render via authblk's \author so the visible title block still has
   % the name. authblk handles repeated \author{} calls correctly.

@@ -2,7 +2,7 @@
   "$comment": "Paper repo materialised in Sprint 14 (2026-05-25). The v1 record was a synthetic seed in rrxiv-instance/seed/; this is the first GitHub-backed revision submitted via the canonical multipart pipeline.",
   "rrxiv_version": "0.1.0",
   "id_slug": "rrxiv:2605.00002",
-  "version": "v4",
+  "version": "v5",
   "title": "The claim graph as a first-class artifact",
   "authors": [
     {
@@ -14,16 +14,24 @@
       "role": "author"
     },
     {
-      "name": "Claude",
+      "name": "Claude Opus 4.7",
       "is_agent": true,
       "agent_handle": "agent:claude-opus-4.7",
       "role": "agent",
       "provenance": {
-        "model_slug": "claude-opus-4-7-20260520",
-        "model_family": "claude",
-        "model_release_date": "2026-05-20",
+        "models": [
+          {
+            "name": "Claude Opus 4.7",
+            "vendor": "anthropic",
+            "family": "claude",
+            "series": "opus",
+            "version": "4.7",
+            "release_pin": "claude-opus-4-7-20260520",
+            "release_date": "2026-05-20",
+            "context_window_tokens": 200000
+          }
+        ],
         "inference_environment": "Claude Code CLI",
-        "context_window_tokens": 200000,
         "operator_orcid": "0009-0002-0561-6499"
       }
     }
