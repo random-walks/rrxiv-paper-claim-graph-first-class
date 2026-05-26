@@ -1,8 +1,21 @@
-% rrxiv.cls -- rrxiv paper class v0.3
+% rrxiv.cls -- rrxiv paper class v0.6
 %
 % Provides a LaTeX class for rrxiv submissions. Extends `article` with
 % semantic environments that the rrxiv parser extracts into the Canonical
 % Intermediate Representation (CIR) without requiring post-hoc OCR.
+%
+% v0.6 (2026-05-26, RRP-0021 + RRP-0025): new \rrxivauthor macro for
+% structured author records with role/ORCID/agent-handle/provenance keys.
+% Authors call \rrxivauthor[k=v,...]{Name} for each author; the macro
+% emits a pipe-separated RRXIV:author:<n>|... line to the sidecar in
+% declaration order, and falls through to authblk's \author{} so the
+% rendered title block stays visual. Plain \author{...} continues to
+% work as a fallback.
+%
+% v0.5 (2026-05-25): \RequirePackage{tikz} + \usetikzlibrary{calc} at
+% class level so geometric figures don't need preamble boilerplate.
+%
+% v0.4 (2026-05-25): \RequirePackage{float} for [H] figure placement.
 %
 % v0.3 (2026-05-25): visible page-stamp footer. Every page now carries
 % the canonical paper id, version, license, build date, and page number
@@ -20,7 +33,7 @@
 % License: MIT.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{rrxiv}[2026/05/25 v0.5 rrxiv paper class]
+\ProvidesClass{rrxiv}[2026/05/26 v0.6 rrxiv paper class]
 
 % Pass options to article
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -42,6 +55,7 @@
 % level so paper authors don't have to repeat the boilerplate.
 \RequirePackage{tikz}
 \usetikzlibrary{calc}
+\RequirePackage{keyval}     % for \rrxivauthor[k=v,...]{Name} (v0.6)
 \RequirePackage{enumitem}
 \RequirePackage[numbers]{natbib}
 \RequirePackage{booktabs}
@@ -108,8 +122,12 @@
 % v0.1: emit on \begin{...} and \end{...} for tracked environments.
 % v0.2: capture content body. For now the parser falls back to source scan.
 \newwrite\rrxiv@sidecar
+% v0.6: open the sidecar at class-load time so preamble macros
+% (like \rrxivauthor) can write to it before \begin{document}. The
+% RRXIV:meta:* lines still emit at \AtBeginDocument because they need
+% the metadata commands to have run.
+\immediate\openout\rrxiv@sidecar=\jobname.rrxiv.aux\relax
 \AtBeginDocument{%
-  \immediate\openout\rrxiv@sidecar=\jobname.rrxiv.aux\relax
   \immediate\write\rrxiv@sidecar{RRXIV:meta:id:\@rrxivid}%
   \immediate\write\rrxiv@sidecar{RRXIV:meta:version:\@rrxivversion}%
   \immediate\write\rrxiv@sidecar{RRXIV:meta:protocol:\@rrxivprotocolversion}%
@@ -187,6 +205,67 @@
 \newcommand{\contradicts}[2]{\immediate\write\rrxiv@sidecar{RRXIV:edge:contradicts:#1|#2}}
 \newcommand{\extendsclaim}[2]{\immediate\write\rrxiv@sidecar{RRXIV:edge:extends:#1|#2}}
 \newcommand{\supports}[2]{\immediate\write\rrxiv@sidecar{RRXIV:edge:supports:#1|#2}}
+
+% ---- Structured author records (v0.6, RRP-0021 + RRP-0025) ----
+%
+% \rrxivauthor[k=v,...]{Display Name}
+%
+% Accepted keys (all optional except the positional Name):
+%   orcid                  ORCID iD (0000-XXXX-XXXX-XXXX form)
+%   role                   author | coauthor | translator | editor | encoder | agent
+%   handle                 agent handle (e.g. `agent:claude-opus-4.7`); implies is-agent=true
+%   is-agent               true|false (default false)
+%   affiliation            free-form institution
+%   email                  contact email
+%   model-slug             RRP-0025 vendor model identifier (lowercased, hyphens)
+%   model-family           RRP-0025 coarse family (`claude`, `gpt`, `gemini`, ...)
+%   model-release-date     YYYY-MM-DD
+%   inference-environment  free-form (`Claude Code CLI`, etc.)
+%
+% Emits one pipe-separated line per call to the sidecar:
+%   RRXIV:author:<n>|name=...|orcid=...|role=...|...
+% Empty fields are still emitted as `key=`; the parser strips them.
+%
+% Falls through to authblk's \author{Name} so the visible title block
+% still renders. Authors who prefer the plain \author{X \and Y \and Z}
+% form can use that instead — the parser then falls back to merging
+% rrxiv-meta.json's authors[] array onto the parsed names by name-match.
+\newcounter{rrxiv@author@count}
+\setcounter{rrxiv@author@count}{0}
+
+\define@key{rrxiv@author}{orcid}{\def\rrxiv@author@orcid{#1}}
+\define@key{rrxiv@author}{role}{\def\rrxiv@author@role{#1}}
+\define@key{rrxiv@author}{handle}{\def\rrxiv@author@handle{#1}}
+\define@key{rrxiv@author}{is-agent}{\def\rrxiv@author@isagent{#1}}
+\define@key{rrxiv@author}{affiliation}{\def\rrxiv@author@affiliation{#1}}
+\define@key{rrxiv@author}{email}{\def\rrxiv@author@email{#1}}
+\define@key{rrxiv@author}{model-slug}{\def\rrxiv@author@modelslug{#1}}
+\define@key{rrxiv@author}{model-family}{\def\rrxiv@author@modelfamily{#1}}
+\define@key{rrxiv@author}{model-release-date}{\def\rrxiv@author@modelrelease{#1}}
+\define@key{rrxiv@author}{inference-environment}{\def\rrxiv@author@infenv{#1}}
+
+\newcommand{\rrxivauthor}[2][]{%
+  % Reset all keys to empty before each call so prior \rrxivauthor's
+  % keys don't leak into this one.
+  \def\rrxiv@author@orcid{}%
+  \def\rrxiv@author@role{}%
+  \def\rrxiv@author@handle{}%
+  \def\rrxiv@author@isagent{}%
+  \def\rrxiv@author@affiliation{}%
+  \def\rrxiv@author@email{}%
+  \def\rrxiv@author@modelslug{}%
+  \def\rrxiv@author@modelfamily{}%
+  \def\rrxiv@author@modelrelease{}%
+  \def\rrxiv@author@infenv{}%
+  \setkeys{rrxiv@author}{#1}%
+  \stepcounter{rrxiv@author@count}%
+  \immediate\write\rrxiv@sidecar{%
+RRXIV:author:\arabic{rrxiv@author@count}|name=#2|orcid=\rrxiv@author@orcid|role=\rrxiv@author@role|handle=\rrxiv@author@handle|is_agent=\rrxiv@author@isagent|affiliation=\rrxiv@author@affiliation|email=\rrxiv@author@email|model_slug=\rrxiv@author@modelslug|model_family=\rrxiv@author@modelfamily|model_release_date=\rrxiv@author@modelrelease|inference_environment=\rrxiv@author@infenv%
+  }%
+  % Render via authblk's \author so the visible title block still has
+  % the name. authblk handles repeated \author{} calls correctly.
+  \author{#2}%
+}
 
 % ---- Convenience macros consistent with common math notation ----
 \newcommand{\R}{\mathbb{R}}
