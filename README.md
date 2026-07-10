@@ -18,10 +18,10 @@ This repo was created from the [rrxiv-paper-template](https://github.com/random-
 ./scripts/verify.sh         # validate the CIR against the rrxiv schema
 ```
 
-The `rrxiv` CLI used by these scripts isn't on PyPI yet — install it from source:
+Install the `rrxiv` CLI used by these scripts:
 
 ```bash
-pip install "rrxiv @ git+https://github.com/random-walks/rrxiv-python.git"
+pip install rrxiv
 ```
 
 ## License
