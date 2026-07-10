@@ -6,6 +6,7 @@ authors:
   - family-names: "Albis-Burdige"
     given-names: "Blaise"
     orcid: "https://orcid.org/0009-0002-0561-6499"
+  - name: "Claude Opus 4.7"
 date-released: 2026-05-15
 license: CC-BY-4.0
 url: "https://github.com/random-walks/rrxiv-paper-claim-graph-first-class"
@@ -17,3 +18,4 @@ preferred-citation:
     - family-names: "Albis-Burdige"
       given-names: "Blaise"
       orcid: "https://orcid.org/0009-0002-0561-6499"
+    - name: "Claude Opus 4.7"
