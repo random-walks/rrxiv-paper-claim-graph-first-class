@@ -2,9 +2,10 @@
 # Extract the Canonical Intermediate Representation (CIR) from the
 # build artifacts produced by scripts/build.sh.
 #
-# Uses the rrxiv CLI from random-walks/rrxiv-python (`pip install rrxiv`
-# or `uv tool install rrxiv` once published; for now: clone alongside
-# this repo and `uv run rrxiv parse` from there).
+# Uses the rrxiv CLI from random-walks/rrxiv-python, published on PyPI:
+#   pip install 'rrxiv>=0.2.1'   (or: uv tool install 'rrxiv>=0.2.1')
+# A sibling rrxiv-python checkout still works as a dev fallback — see
+# the resolution order below.
 #
 # Output: build/main.cir.json
 set -euo pipefail
@@ -24,7 +25,7 @@ fi
 # Resolve the rrxiv CLI. Order:
 #   1. $RRXIV_PYTHON_REPO env var (CI sets this; respects any in-repo
 #      override).
-#   2. `rrxiv` on PATH (once published to PyPI, or a global uv install).
+#   2. `rrxiv` on PATH (a PyPI install: pip or uv tool, >=0.2.1).
 #   3. Sibling checkout — the local-dev convention where paper repos sit
 #      next to rrxiv-python under one workspace dir.
 # `rrxiv.cli.app` eagerly imports every sub-command at module load
@@ -53,7 +54,7 @@ fi
 if [[ -z "$RRXIV_CMD" ]]; then
   echo "ERROR: rrxiv CLI not found." >&2
   echo "Options:" >&2
-  echo "  1. Install: pip install rrxiv  (once published)" >&2
+  echo "  1. Install from PyPI: pip install 'rrxiv>=0.2.1'" >&2
   echo "  2. Clone https://github.com/random-walks/rrxiv-python alongside this repo." >&2
   exit 127
 fi

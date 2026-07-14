@@ -16,23 +16,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Pull in rrxiv (schema) + rrxiv-python (CLI) at workspace-relative
-      # paths under deps/. actions/checkout enforces a $GITHUB_WORKSPACE
-      # containment check so `path: ../<name>` is rejected; we instead
-      # check out under deps/ and point the scripts at them via the
-      # RRXIV_REPO / RRXIV_PYTHON_REPO env vars below.
+      # Pull in rrxiv (schema) at a workspace-relative path under deps/.
+      # actions/checkout enforces a $GITHUB_WORKSPACE containment check so
+      # `path: ../<name>` is rejected; we instead check out under deps/ and
+      # point the scripts at it via the RRXIV_REPO env var below. The rrxiv
+      # CLI itself installs from PyPI (rrxiv>=0.2.1) — no source checkout.
       - name: Check out rrxiv (schema)
         uses: actions/checkout@v4
         with:
           repository: random-walks/rrxiv
           path: deps/rrxiv
-          ref: main
-
-      - name: Check out rrxiv-python (CLI)
-        uses: actions/checkout@v4
-        with:
-          repository: random-walks/rrxiv-python
-          path: deps/rrxiv-python
           ref: main
 
       - name: Install tectonic
@@ -50,6 +43,9 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Install rrxiv CLI (PyPI)
+        run: pip install 'rrxiv>=0.2.1'
+
       - name: Install jsonschema for verify
         run: pip install jsonschema
 
@@ -57,15 +53,11 @@ jobs:
         run: ./scripts/build.sh
 
       - name: Extract CIR
-        env:
-          RRXIV_REPO: ${{ github.workspace }}/deps/rrxiv
-          RRXIV_PYTHON_REPO: ${{ github.workspace }}/deps/rrxiv-python
         run: ./scripts/extract-cir.sh
 
       - name: Verify CIR against schema
         env:
           RRXIV_REPO: ${{ github.workspace }}/deps/rrxiv
-          RRXIV_PYTHON_REPO: ${{ github.workspace }}/deps/rrxiv-python
         run: ./scripts/verify.sh
 
       - name: Upload workflow artifacts
