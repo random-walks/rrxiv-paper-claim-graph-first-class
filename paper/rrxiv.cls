@@ -1,8 +1,19 @@
-% rrxiv.cls -- rrxiv paper class v0.7
+% rrxiv.cls -- rrxiv paper class v0.8
 %
 % Provides a LaTeX class for rrxiv submissions. Extends `article` with
 % semantic environments that the rrxiv parser extracts into the Canonical
 % Intermediate Representation (CIR) without requiring post-hoc OCR.
+%
+% v0.8 (2026-07-14, RRP-0030): the `claim` environment's optional
+% argument becomes a key=value list exposing claim.schema fields at the
+% authoring site: `type=` (claim_type), `evidence=` (evidence_type),
+% `confidence=`/`confidence-low=`/`confidence-high=`/`rationale=`,
+% `labels={...}`, and scope keys `models=`/`datasets=`/`regimes=`/
+% `assumptions=`. Backwards compatible: an optional argument containing
+% no `=` is a plain display title exactly as before (titles that contain
+% a literal `=` must be written via `title={...}`). The semantic keys
+% are render-inert here — the rrxiv parser reads them from the source;
+% only `title` affects the rendered theorem note.
 %
 % v0.7 (2026-05-26, RRP-0026): \rrxivauthor gains four new keys for the
 % gold-standard agent attribution shape — `model-name`, `model-vendor`,
@@ -41,7 +52,7 @@
 % License: MIT.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{rrxiv}[2026/05/26 v0.7 rrxiv paper class]
+\ProvidesClass{rrxiv}[2026/07/14 v0.8 rrxiv paper class]
 
 % Pass options to article
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -162,8 +173,37 @@
 % parser can locate it in the source. Claims, in particular, get a stable
 % local label that the CIR uses for the claim ID (paper_id:label).
 
+% v0.8 (RRP-0030): the claim environment's optional argument doubles as a
+% key=value list. If the argument contains a `=`, it is parsed with keyval:
+% `title=` sets the rendered theorem note; the semantic keys below are
+% accepted but render-inert (the rrxiv parser reads them from the SOURCE,
+% mapping them onto claim.schema fields — see proposals/0030). An argument
+% with no `=` is a plain title, exactly as in v0.7.
+\RequirePackage{keyval}
+\def\rrxiv@claim@title{}
+\define@key{rrxivclaim}{title}{\def\rrxiv@claim@title{#1}}
+% Semantic keys (parser-consumed; no-ops for rendering):
+\define@key{rrxivclaim}{type}{}
+\define@key{rrxivclaim}{evidence}{}
+\define@key{rrxivclaim}{confidence}{}
+\define@key{rrxivclaim}{confidence-low}{}
+\define@key{rrxivclaim}{confidence-high}{}
+\define@key{rrxivclaim}{rationale}{}
+\define@key{rrxivclaim}{labels}{}
+\define@key{rrxivclaim}{models}{}
+\define@key{rrxivclaim}{datasets}{}
+\define@key{rrxivclaim}{regimes}{}
+\define@key{rrxivclaim}{assumptions}{}
+
 \newenvironment{claim}[1][]{%
-  \begin{rrxiv@claim}[#1]%
+  \in@{=}{#1}%
+  \ifin@
+    \def\rrxiv@claim@title{}%
+    \setkeys{rrxivclaim}{#1}%
+  \else
+    \def\rrxiv@claim@title{#1}%
+  \fi
+  \begin{rrxiv@claim}[\rrxiv@claim@title]%
   \rrxiv@emit{claim}{begin}%
 }{%
   \end{rrxiv@claim}%

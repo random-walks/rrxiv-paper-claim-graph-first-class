@@ -79,7 +79,7 @@ Example:
 
 The paper template's CI workflow attaches built artefacts to each git tag (`v1`, `v2`, …). The canonical-instance ingestion happens via `./scripts/submit.sh` — which is independent of GitHub Releases but typically run after the tag is published so the source bundle hash matches the public release.
 
-If the canonical instance auto-discovers your paper repo (manifest-based), you can skip the manual submit step entirely: cut the tag, CI publishes, and the instance picks it up on the next manifest sweep. Today the auto-discovery path is opt-in by appearing in `rrxiv-instance/papers/manifest.json`.
+There is **no auto-discovery**: the canonical instance does not watch your repo, tags, or GitHub Releases, and there is no manifest sweep. Its manifest (`rrxiv-instance/papers/manifest.json`) is only the *bootstrap seed corpus* — pre-built snapshots used to seed a fresh database — not a version-sync channel. Every revision reaches the live instance exactly one way: `./scripts/submit.sh` (i.e. `rrxiv submit --revision-of`), where the server assigns the new version and the `previous_version` lineage. This applies even to papers that are in the canonical seed manifest.
 
 ## Recovery: I submitted a bad v2
 
