@@ -21,7 +21,7 @@ This repo was created from the [rrxiv-paper-template](https://github.com/random-
 Install the `rrxiv` CLI used by these scripts:
 
 ```bash
-pip install rrxiv
+pip install 'rrxiv>=0.2.1'
 ```
 
 ## License
