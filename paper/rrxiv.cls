@@ -1,8 +1,34 @@
-% rrxiv.cls -- rrxiv paper class v0.7
+% rrxiv.cls -- rrxiv paper class v0.8
 %
 % Provides a LaTeX class for rrxiv submissions. Extends `article` with
 % semantic environments that the rrxiv parser extracts into the Canonical
 % Intermediate Representation (CIR) without requiring post-hoc OCR.
+%
+% v0.8.2 (2026-07-14): \rrxivauthor now DEFERS author rendering — it
+% accumulates (name, affiliation) and emits the authblk block once at
+% \AtBeginDocument. When every author shares one affiliation (the common
+% rrxiv case, e.g. all "The rrxiv project") it renders a single shared
+% \affil with no per-author superscripts; distinct/partial affiliations
+% fall back to per-author \author/\affil. Supersedes the v0.8.1 approach,
+% which triple-printed a shared affiliation (authblk does not merge
+% identical per-author \affil calls).
+%
+% v0.8.1 (2026-07-14): \rrxivauthor paired each \author with an \affil
+% (empty when none given) — authblk silently keeps only the LAST of
+% repeated bare \author{} calls, so multi-author papers using
+% \rrxivauthor rendered a single name in the PDF title block. (Correct for
+% distinct affiliations, but see v0.8.2 for the shared-affiliation case.)
+%
+% v0.8 (2026-07-14, RRP-0030): the `claim` environment's optional
+% argument becomes a key=value list exposing claim.schema fields at the
+% authoring site: `type=` (claim_type), `evidence=` (evidence_type),
+% `confidence=`/`confidence-low=`/`confidence-high=`/`rationale=`,
+% `labels={...}`, and scope keys `models=`/`datasets=`/`regimes=`/
+% `assumptions=`. Backwards compatible: an optional argument containing
+% no `=` is a plain display title exactly as before (titles that contain
+% a literal `=` must be written via `title={...}`). The semantic keys
+% are render-inert here — the rrxiv parser reads them from the source;
+% only `title` affects the rendered theorem note.
 %
 % v0.7 (2026-05-26, RRP-0026): \rrxivauthor gains four new keys for the
 % gold-standard agent attribution shape — `model-name`, `model-vendor`,
@@ -41,7 +67,7 @@
 % License: MIT.
 
 \NeedsTeXFormat{LaTeX2e}
-\ProvidesClass{rrxiv}[2026/05/26 v0.7 rrxiv paper class]
+\ProvidesClass{rrxiv}[2026/07/14 v0.8.2 rrxiv paper class]
 
 % Pass options to article
 \DeclareOption*{\PassOptionsToClass{\CurrentOption}{article}}
@@ -141,6 +167,9 @@
   \immediate\write\rrxiv@sidecar{RRXIV:meta:protocol:\@rrxivprotocolversion}%
   \immediate\write\rrxiv@sidecar{RRXIV:meta:license:\@rrxivlicense}%
   \immediate\write\rrxiv@sidecar{RRXIV:meta:topics:\@rrxivtopics}%
+  % Emit the accumulated \rrxivauthor records into authblk now, before
+  % \maketitle, with shared affiliations collapsed (v0.8.2).
+  \rrxiv@emitauthors
 }
 \AtEndDocument{\immediate\closeout\rrxiv@sidecar}
 
@@ -162,8 +191,37 @@
 % parser can locate it in the source. Claims, in particular, get a stable
 % local label that the CIR uses for the claim ID (paper_id:label).
 
+% v0.8 (RRP-0030): the claim environment's optional argument doubles as a
+% key=value list. If the argument contains a `=`, it is parsed with keyval:
+% `title=` sets the rendered theorem note; the semantic keys below are
+% accepted but render-inert (the rrxiv parser reads them from the SOURCE,
+% mapping them onto claim.schema fields — see proposals/0030). An argument
+% with no `=` is a plain title, exactly as in v0.7.
+\RequirePackage{keyval}
+\def\rrxiv@claim@title{}
+\define@key{rrxivclaim}{title}{\def\rrxiv@claim@title{#1}}
+% Semantic keys (parser-consumed; no-ops for rendering):
+\define@key{rrxivclaim}{type}{}
+\define@key{rrxivclaim}{evidence}{}
+\define@key{rrxivclaim}{confidence}{}
+\define@key{rrxivclaim}{confidence-low}{}
+\define@key{rrxivclaim}{confidence-high}{}
+\define@key{rrxivclaim}{rationale}{}
+\define@key{rrxivclaim}{labels}{}
+\define@key{rrxivclaim}{models}{}
+\define@key{rrxivclaim}{datasets}{}
+\define@key{rrxivclaim}{regimes}{}
+\define@key{rrxivclaim}{assumptions}{}
+
 \newenvironment{claim}[1][]{%
-  \begin{rrxiv@claim}[#1]%
+  \in@{=}{#1}%
+  \ifin@
+    \def\rrxiv@claim@title{}%
+    \setkeys{rrxivclaim}{#1}%
+  \else
+    \def\rrxiv@claim@title{#1}%
+  \fi
+  \begin{rrxiv@claim}[\rrxiv@claim@title]%
   \rrxiv@emit{claim}{begin}%
 }{%
   \end{rrxiv@claim}%
@@ -241,6 +299,57 @@
 \newcounter{rrxiv@author@count}
 \setcounter{rrxiv@author@count}{0}
 
+% ---- Deferred author rendering (v0.8.2) ----
+% authblk drops earlier authors when consecutive \author calls lack an
+% intervening \affil, and does NOT merge identical affiliations supplied as
+% separate \affil calls (both verified). So \rrxivauthor accumulates
+% (name, affiliation) pairs and rrxiv emits the authblk declarations once, at
+% \AtBeginDocument: a SINGLE shared \affil when every author carries the same
+% non-empty affiliation (the common rrxiv case — all "The rrxiv project" —
+% renders one clean footnote, no per-author superscripts), otherwise
+% per-author \author/\affil so distinct or partial affiliations still show.
+\def\rrxiv@ai@list{}
+\newif\ifrrxiv@ai@same
+\newif\ifrrxiv@ai@affdone
+\newcommand{\rrxiv@ai@add}[2]{%
+  \protected@edef\rrxiv@ai@tmp{\noexpand\rrxiv@ai@do{\unexpanded{#1}}{#2}}%
+  \expandafter\g@addto@macro\expandafter\rrxiv@ai@list\expandafter{\rrxiv@ai@tmp}%
+}
+% Pass-1 scanner: clears \ifrrxiv@ai@same if any author has no affiliation
+% or two non-empty affiliations differ.
+\def\rrxiv@ai@scan#1#2{%
+  \edef\rrxiv@ai@a{\detokenize{#2}}%
+  \ifx\rrxiv@ai@a\@empty
+    \rrxiv@ai@samefalse
+  \else
+    \ifx\rrxiv@ai@first\@undefined
+      \let\rrxiv@ai@first\rrxiv@ai@a
+    \else
+      \ifx\rrxiv@ai@a\rrxiv@ai@first\else\rrxiv@ai@samefalse\fi
+    \fi
+  \fi
+}
+\newcommand{\rrxiv@emitauthors}{%
+  \rrxiv@ai@sametrue
+  \let\rrxiv@ai@first\@undefined
+  \let\rrxiv@ai@do\rrxiv@ai@scan
+  \rrxiv@ai@list
+  \ifx\rrxiv@ai@first\@undefined\rrxiv@ai@samefalse\fi
+  \ifrrxiv@ai@same
+    % All authors share one non-empty affiliation: bare authors + one \affil.
+    \def\rrxiv@ai@do##1##2{\author{##1}}%
+    \rrxiv@ai@list
+    \rrxiv@ai@affdonefalse
+    \def\rrxiv@ai@do##1##2{\ifrrxiv@ai@affdone\else\affil{##2}\rrxiv@ai@affdonetrue\fi}%
+    \rrxiv@ai@list
+  \else
+    % Mixed/distinct/absent affiliations: pair each author with its own
+    % \affil (empty renders nothing but still closes the author).
+    \def\rrxiv@ai@do##1##2{\author{##1}\affil{##2}}%
+    \rrxiv@ai@list
+  \fi
+}
+
 \define@key{rrxiv@author}{orcid}{\def\rrxiv@author@orcid{#1}}
 \define@key{rrxiv@author}{role}{\def\rrxiv@author@role{#1}}
 \define@key{rrxiv@author}{handle}{\def\rrxiv@author@handle{#1}}
@@ -282,9 +391,10 @@
   \immediate\write\rrxiv@sidecar{%
 RRXIV:author:\arabic{rrxiv@author@count}|name=#2|orcid=\rrxiv@author@orcid|role=\rrxiv@author@role|handle=\rrxiv@author@handle|is_agent=\rrxiv@author@isagent|affiliation=\rrxiv@author@affiliation|email=\rrxiv@author@email|model_name=\rrxiv@author@modelname|model_vendor=\rrxiv@author@modelvendor|model_family=\rrxiv@author@modelfamily|model_series=\rrxiv@author@modelseries|model_version=\rrxiv@author@modelversion|model_release_pin=\rrxiv@author@modelreleasepin|model_release_date=\rrxiv@author@modelrelease|inference_environment=\rrxiv@author@infenv%
   }%
-  % Render via authblk's \author so the visible title block still has
-  % the name. authblk handles repeated \author{} calls correctly.
-  \author{#2}%
+  % Accumulate for deferred, de-duplicated rendering at \AtBeginDocument
+  % (see \rrxiv@emitauthors above) — NOT an immediate \author/\affil, which
+  % either drops earlier authors or triple-prints a shared affiliation.
+  \rrxiv@ai@add{#2}{\rrxiv@author@affiliation}%
 }
 
 % ---- Convenience macros consistent with common math notation ----

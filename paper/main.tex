@@ -1,13 +1,31 @@
 \documentclass{rrxiv}
 \rrxivid{rrxiv:2605.00002}
-\rrxivversion{v3}
+\rrxivversion{v4}
 \rrxivprotocolversion{0.1.0}
 \rrxivlicense{CC-BY-4.0}
 \rrxivtopics{cs.DL,cs.AI}
-\rrxivbuilddate{2026-05-25}
+\rrxivbuilddate{2026-07-14}
 
 \title{The claim graph as a first-class artifact}
-\author{Blaise Albis-Burdige \and Claude Opus 4.7}
+% Structured author records (RRP-0021/0025/0026). These mirror the
+% authors[] array in rrxiv-meta.json, including the agent co-author's
+% model provenance keys.
+\rrxivauthor[orcid=0009-0002-0561-6499,
+             role=author,
+             affiliation=The rrxiv project,
+             email=albisburdige@protonmail.com]{Blaise Albis-Burdige}
+\rrxivauthor[role=agent,
+             affiliation=The rrxiv project,
+             handle=agent:claude-opus-4.7,
+             is-agent=true,
+             model-name=Claude Opus 4.7,
+             model-vendor=anthropic,
+             model-family=claude,
+             model-series=opus,
+             model-version=4.7,
+             model-release-pin=claude-opus-4-7-20260520,
+             model-release-date=2026-05-20,
+             inference-environment=Claude Code CLI]{Claude Opus 4.7}
 \date{2026-05-15}
 
 \begin{document}
@@ -58,13 +76,48 @@ The three encodings were evaluated on three tasks. \emph{Task 1: retrieval.} A h
 \dependson{rrxiv:2605.00002:claim:c5}{rrxiv:2605.00002:claim:c1}
 \dependson{rrxiv:2605.00002:claim:c6}{rrxiv:2605.00002:claim:c1}
 \dependson{rrxiv:2605.00002:claim:c7}{rrxiv:2605.00002:claim:c5}
-% Cross-paper edges to the rrxiv whitepaper (rrxiv:2605.00001) were
-% considered but the whitepaper's claim labels are not yet stable
-% across versions, so we hold off on machine-readable depends_on/
-% supports edges until label stabilisation. Prose engagement with
-% the whitepaper's claim-graph commitments stands in for now.
+% Cross-paper edges (v4 enrichment). The whitepaper's claim labels
+% stabilised with the RRP-0029 re-mint (slug-based claim ids), so the
+% machine-readable edges deferred at v3 are now registered. All target
+% ids verified against the live corpus (api.rrxiv.com) on 2026-07-14.
+%
+% c1 (subset relation) and c4 (replication masking) support the
+% whitepaper's position that paper-level metadata is insufficient and
+% claim-level structure is necessary; the introduction says exactly
+% this ("registers the evidence supporting it").
+\supports{rrxiv:2605.00002:claim:c1}{rrxiv:2605.00001:claim:volume-structure}
+\supports{rrxiv:2605.00002:claim:c4}{rrxiv:2605.00001:claim:volume-structure}
+% c3 (28% retrieval lift over the citation graph) is empirical support
+% for the whitepaper's queryability claim (claim-graph queries beat
+% citation-count triage).
+\supports{rrxiv:2605.00002:claim:c3}{rrxiv:2605.00001:claim:queryability}
+% c5 reduces claim-id stability to "keep paper_id canonical", which in
+% the rrxiv corpus is exactly the whitepaper's slug-stable property.
+\dependson{rrxiv:2605.00002:claim:c5}{rrxiv:2605.00001:claim:slug-stable}
+% c7 (BibTeX-compatible ingest, three managers, no upstream changes)
+% supports 00006's c2, whose typed-edge extension asserts the same
+% BibTeX compatibility property.
+\supports{rrxiv:2605.00002:claim:c7}{rrxiv:2605.00006:claim:c2}
+%
+% Edges considered but NOT added (honesty rule):
+% - rrxiv:2605.00003 (reproducibility budgets): the prose calls it a
+%   "complementary lens" on Claim 2's cost concession — complementary,
+%   not a dependency or support relation, so no machine edge.
+% - rrxiv:2605.00005 (agents as editors): Claim 6's clustering result
+%   stands on its own two-coder study; 00005 "takes up" the
+%   agent-commenter question downstream, but none of its registered
+%   claims supports or is required by c6.
+% - rrxiv:2605.00008 (active replication): the prose says c4 was
+%   independently replicated there (comparable 38% figure), which
+%   would justify a supports edge FROM a claim of 00008 TO c4 — but no
+%   claim in 00008's registered set (c1..c7, checked against the live
+%   API) corresponds to that result, and the edge's source would be
+%   00008's claim, so it belongs in 00008's source anyway. Flagged for
+%   00008's own enrichment pass.
+% - rrxiv:2605.00009 (Euclid): cited purely as an illustration of
+%   encoding density; no claim here depends on it.
 
-\begin{claim}[Claim 1: subset relation]
+\begin{claim}[type=theoretical, evidence=argument, confidence=0.95, rationale={Structural argument: paper-level citation is recoverable as the degenerate one-synthetic-claim-per-paper case, so the superset relation holds by construction rather than by measurement}, labels={position, protocol-design, addressability}, title={Claim 1: subset relation}]
 \label{claim:c1}
 Claim-level addressability is a strict superset of paper-level addressability: anything you can express by citing a paper, you can express by citing one of its claims.
 
@@ -79,7 +132,7 @@ A subtle consequence: this is also the reason migration is cheap. An instance th
 Annotation timings were collected over 18 annotators (PhDs in CS, biology, and economics), each annotating a stratified 50-paper subsample with 4-way overlap on a 20-paper calibration set. Median per-paper times were 47 minutes (claim-level, full edge graph), 22 minutes (claim-level, no inter-paper edges), and 14 minutes (paper-level metadata only). The 3.4x figure compares the first to the third.
 \end{evidence}
 
-\begin{claim}[Claim 2: annotation overhead]
+\begin{claim}[type=empirical, evidence=observation, confidence=0.8, rationale={Median timing over 18 annotators on a stratified 200-paper subsample with a 20-paper calibration overlap; a single study, not independently replicated}, labels={annotation-cost, measurement}, datasets={rrxiv reproducibility-track 200-paper corpus}, title={Claim 2: annotation overhead}]
 \label{claim:c2}
 Annotating claims is 3.4x more expensive than annotating papers (median, 18 annotators, 200-paper subset).
 
@@ -88,7 +141,7 @@ Annotating claims is 3.4x more expensive than annotating papers (median, 18 anno
 
 This is the central concession. The cost is real, it is not a one-time tax (each new version requires re-annotation of the diff), and it falls disproportionately on authors. We do not claim the cost is small. We claim it is justified because (a) it is paid once per paper-version, while query benefits accrue indefinitely; (b) most of the cost is in declaring edges, which an extractor-assisted tool can pre-populate; and (c) for the highest-value queries --- has this been replicated, does anyone contradict this --- there is no cheaper substitute that returns the right answer. The reproducibility-budget framework in \texttt{rrxiv:2605.00003} provides a complementary lens: if reproducibility is a budgetable cost, claim-level annotation is the first line item.
 
-\begin{claim}[Claim 3: retrieval gain]
+\begin{claim}[type=empirical, evidence=experiment, confidence=0.75, rationale={Single benchmark of 1200 queries with one dense retriever; the B-vs-C gap is the load-bearing comparison and has not been reproduced with other retrievers}, labels={retrieval, benchmark}, datasets={rrxiv reproducibility-track 200-paper corpus}, regimes={narrow single-result technical queries}, title={Claim 3: retrieval gain}]
 \label{claim:c3}
 Claim-graph retrieval improves recall@10 by 28\% over citation-graph retrieval on narrow technical queries (n=1,200 queries).
 
@@ -97,7 +150,7 @@ Claim-graph retrieval improves recall@10 by 28\% over citation-graph retrieval o
 
 Recall@10 rose from 0.51 (Encoding A) to 0.65 (Encoding C); Encoding B sat in between at 0.58. The gap between B and C is the relevant signal: simply going below paper-level (B) recovers about half the benefit, but the rhetorical bundling that authors do at the claim level (C) recovers the rest. Examining the error modes, Encoding B fails on queries where the answer requires a claim composed across two or three sentences (``does X improve under Y given Z?''), because the sentence-level decomposition fractured the proposition into pieces that each individually look low-relevance. Encoding C keeps the claim intact, which is what the query was actually asking about. We expect the gap to widen for queries posed by agents rather than humans, who tend to issue narrower and more compositional questions; that hypothesis is not yet tested.
 
-\begin{claim}[Claim 4: replication masking]
+\begin{claim}[type=empirical, evidence=observation, confidence=0.9, rationale={30 of 73 replication-labelled papers in our corpus; the prose reports an independent extension in rrxiv:2605.00008 with a comparable 38 percent figure}, labels={replication, masking, rollup}, datasets={rrxiv reproducibility-track 200-paper corpus}, title={Claim 4: replication masking}]
 \label{claim:c4}
 Paper-level replication labels mask within-paper disagreement: in our sample, 41\% of ``replicated'' papers had at least one contradicted claim.
 
@@ -106,7 +159,7 @@ Paper-level replication labels mask within-paper disagreement: in our sample, 41
 
 This is the only claim in this paper with replication status \emph{replicated}, and it carries the most weight for the argument. Of 73 papers in our corpus with a positive paper-level replication label, 30 contained at least one claim that a downstream paper had explicitly contradicted at the claim level. Without claim-level addressability, those contradictions are not surfaced --- they live inside the citing paper's prose, where a paper-level rollup cannot reach them. The paper-level label is not wrong; it is averaging over a population (the paper's claims) that has internal disagreement. This is the same kind of error as reporting a treatment as ``effective'' when only the primary endpoint was met and a secondary endpoint moved in the wrong direction. The replication of this claim itself was performed independently in \texttt{rrxiv:2605.00008}, which extends it to a larger active-replication corpus and reports a comparable 38\% figure.
 
-\begin{claim}[Claim 5: stable claim IDs]
+\begin{claim}[type=methodological, evidence=argument, confidence=0.85, rationale={Holds by construction given label immutability, which is a publish-time-enforceable discipline rather than a guarantee; the residual risk is paper-id canonicality drift}, labels={identifiers, versioning, protocol-design}, title={Claim 5: stable claim IDs}]
 \label{claim:c5}
 A canonical claim ID format of \texttt{<paper\_id>:<kind>:<label>} survives version chains without rewriting if \texttt{paper\_id} stays canonical.
 
@@ -119,7 +172,7 @@ The version-chain question is where most prior structured-discourse projects hav
 We deliberately keep the \texttt{<kind>} slot in claim IDs minimal --- \texttt{claim}, \texttt{evidence}, \texttt{observation}, plus a small handful. Earlier drafts had a richer ontology (\texttt{empirical-claim}, \texttt{methodological-claim}, etc.); we removed it because the type assignment was the single largest source of inter-annotator disagreement, and downstream consumers did not use the fine-grained types. The ontology lives in the per-claim metadata, not in the ID.
 \end{rrxivremark}
 
-\begin{claim}[Claim 6: discourse clustering]
+\begin{claim}[type=empirical, evidence=observation, confidence=0.8, rationale={Krippendorff alpha of 0.81 from two independent coders over 1840 discussion-thread comments; single corpus, coding scheme not yet reused elsewhere}, labels={discourse, annotation, clustering}, title={Claim 6: discourse clustering}]
 \label{claim:c6}
 Per-claim discussion threads cluster into reproducibility / methodology / interpretation buckets with 0.81 inter-coder agreement.
 
@@ -128,7 +181,7 @@ Per-claim discussion threads cluster into reproducibility / methodology / interp
 
 When commentary is attached to a paper, it is a single undifferentiated stream and the reader must filter. When commentary is attached to a claim, three coarse buckets emerge naturally: comments that question whether the result holds (reproducibility), comments that question how it was measured (methodology), and comments that question what it means (interpretation). Two independent coders labeled 1{,}840 discussion-thread comments into these three buckets with Krippendorff's $\alpha = 0.81$. This is high enough that automated bucketing is feasible, which in turn makes per-claim discourse navigable at scale --- a reader can ask ``show me only the methodology critiques of Claim 4'' and get a useful slice. The role of agent commenters in producing well-bucketed threads is taken up in \texttt{rrxiv:2605.00005}.
 
-\begin{claim}[Claim 7: BibTeX compatibility]
+\begin{claim}[type=computational, evidence=experiment, confidence=0.85, rationale={Implemented against three reference managers with no upstream changes required; relies on BibTeX's documented tolerance for unknown fields}, labels={compatibility, migration, tooling}, title={Claim 7: BibTeX compatibility}]
 \label{claim:c7}
 Existing citation managers can ingest claim-graph edges as a typed-citation extension without breaking BibTeX compatibility.
 
