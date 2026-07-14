@@ -2,7 +2,7 @@
   "$comment": "Paper repo materialised in Sprint 14 (2026-05-25). The v1 record was a synthetic seed in rrxiv-instance/seed/; this is the first GitHub-backed revision submitted via the canonical multipart pipeline.",
   "rrxiv_version": "0.1.0",
   "id_slug": "rrxiv:2605.00002",
-  "version": "v3",
+  "version": "v4",
   "title": "The claim graph as a first-class artifact",
   "authors": [
     {
@@ -64,6 +64,12 @@
       "paper_id": "rrxiv:2605.00002",
       "submitted_at": "2026-05-30T00:00:00Z",
       "notes": "Re-minted under RRP-0029: the machine id is now a server-assigned UUIDv7 (opaque); id_slug rrxiv:2605.00002 is the stable citable identifier and claim ids are slug-based. Current deployed head as of the 2026-05-30 corpus re-mint."
+    },
+    {
+      "version": "v4",
+      "paper_id": "rrxiv:2605.00002",
+      "submitted_at": "2026-07-14T18:04:44.126908Z",
+      "notes": "2026-07 protocol-enrichment revision (RRP-0030 epistemology, typed cross-paper edges, structured authorship)."
     }
   ]
 }
